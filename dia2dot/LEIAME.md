@@ -43,5 +43,10 @@ Este é um exemplo da especificação do diagrama de classes:
     Um ~~ Usa
     Um ~~> Implementa 
 
+Modo de Uso
+-----------
+
+    dia2dot FILE.dia [ --circo ]
+
 Jan/2014  
 Guga Coder
