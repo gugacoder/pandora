@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# Utilitário para geração de diagramas de classes apartir de uma especificação
+# de classes em arquivo texto.
+#
+# Jan/2014
+# Guga Coder
+
+model=
+app=
+
+if [ "${1}" = "--circo" ]; then
+  model="${2}"
+  app=circo
+else
+  model="${1}"
+  if [ "${2}" = "--circo" ]; then
+    app=circo
+  else
+    app=dot
+  fi
+fi
+
+if [ "${1}" = "--help" ] | [ "${1}" = "-h" ] | [ "${model}" = "" ]; then
+  echo "Utilitário para geração de diagramas de classes apartir de uma"
+  echo "especificação de classes em arquivo texto."
+  echo ""
+  echo "Forma geral de uso"
+  echo "  ${0} ARQUIVO [ --disco ]"
+  echo ""
+  echo "Parâmetros"
+  echo "  ARQUIVO   Arquivo de especificação do diagrama de classe."
+  echo "            Baseado no arquivo modelo 'modelo.dia'"
+  echo "  --disco   Ativa o uso do comando 'disco' em vez do comando 'dot'"
+  echo "            para geração do diagrama."
+  echo "Copyleft 2014 Guga Coder"
+  echo "All rights reversed"
+  exit
+fi
+
+# construindo classes
+#
+cat "${model}" | grep -v '^//' | grep -v ' [-~]\{2\}[o<>)]\? ' > /tmp/dia.cls
+cat /tmp/dia.cls | sed 's/^[a-zA-Z]/cls &/;s/^</ste &/;s/^---/pip/;s/^[-+#~]/fld &/;s/^\s*$/bln/;' | sed 's/^cls \([^<]*\)/ent \1\n&/' | awk '/^ste/{getline x;print x;}1' > /tmp/dia.cls.ent
+cat /tmp/dia.cls.ent | sed 's/["<>]/\\&/g;' | sed 's/^ent \(.*\)/\1[label="{/;s/^ste \(.*\)/\1\\n/;s/^cls \(.*\)/\1/;s/^pip/|/;s/^fld \(.*\)/\1\\l/;s/^bln/§/;' | tr -d '\n' | sed 's/§\+/}"]\n/g' | sed 's/.*/  &/' > /tmp/dia.cls.ent.done
+
+# construindo relações
+#
+cat "${model}" | grep -v '^//' | grep ' [-~]\{2\}[o<>)]\? ' > /tmp/dia.rel
+cat /tmp/dia.rel | sed 's/ //g' | sed 's/\(.*\)-->\(.*\)/\2 -> \1 [arrowtail=empty]/;s/\(.*\)--<\(.*\)/\2 -> \1 [arrowtail=odiamond]/;s/\(.*\)--o\(.*\)/\2 -> \1 [arrowtail=diamond]/;s/\(.*\)--\(.*\)/\2 -> \1/;s/\(.*\)~~>\(.*\)/\2 -> \1 [arrowtail=empty,style=dotted]/;s/\(.*\)~~\(.*\)/\2 -> \1 [arrowtail=open,style=dotted]/;' | sed 's/.*/  &/'> /tmp/dia.rel.done
+
+# construindo o arquivo dot
+#
+echo 'digraph {
+  node[font=Arial,fontsize=10,shape=record,style=filled,fillcolor=gray95]
+  edge[dir=back,arrowhead=none,arrowtail=none]
+
+  //splines=ortho|line|polyline|spline
+  splines=ortho
+  
+  ${dia}
+
+}' | awk '{if ($0 ~ /dia/) system("cat /tmp/dia.cls.ent.done /tmp/dia.rel.done"); else print $0}' > /tmp/dia.dot
+
+# compilando imagens
+#
+${app} /tmp/dia.dot -T png > /tmp/dia.png
+${app} /tmp/dia.dot -T svg > /tmp/dia.svg
+
+# salvando os arquivos gerados
+#
+cp /tmp/dia.dot "${model}.dot"
+cp /tmp/dia.png "${model}.png"
+cp /tmp/dia.svg "${model}.svg"
+
