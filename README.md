@@ -3,5 +3,6 @@ Pandora
 
 Uma coleção de projetos e estudos que provavelmente possuem alguma utilidade.
 
----------------------------------
-Guga Coder <guga.coder@gmail.com>
+Jan/2014  
+Guga Coder  
+<guga.coder@gmail.com>
